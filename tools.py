@@ -3,9 +3,11 @@ __author__ = 'dos'
 import sys, os
 import inspect
 
+sys.path.append("../Events")
+
+import test2
 
 #list_mocked_method - collection of mocked items
-#
 list_mocked_method = []
 
 #Mocked_Item - class defines object to keep details about mocked item
@@ -17,13 +19,11 @@ class Mocked_Item(object):
 
 #Collect_Info - retrieves details about mocking procedure,
 #
-    #   #module             - keeps an object reference
-    #   #name_orig_methode  - holds an original method name
-    #   #attr_orig_methode  - holds a reference to an original method
-    #   #name_mock_methode  - holds a mocked method name
-    #   #attr_orig_methode  - holds a reference to a mocked method
-
-#Collect_Info - process details info about mocked item
+#   #module             - keeps an object reference
+#   #name_orig_methode  - holds an original method name
+#   #attr_orig_methode  - holds a reference to an original method
+#   #name_mock_methode  - holds a mocked method name
+#   #attr_orig_methode  - holds a reference to a mocked method
 #
     def Collect_Info(self, *items_list):
 
@@ -43,7 +43,9 @@ class Mocked_Item(object):
         delattr(self.module, self.name_orig_method)
         setattr(self.module, self.name_orig_method, self.attr_orig_method)
 
-
+#Verification - process a class's object in order to get the list of methods
+#               and fields.
+#
 def Verification(obj=object):
 
     # list of built in methods
@@ -115,22 +117,65 @@ def Replace_Class(original_class, mock_class):
 
     print text_result
 
-# #Replace_Method - substitutes the original wit mocked method
+#Return_Name_From_Attribute - checks if passed attribute reference belong
+#                             to object refrence and retrives refrence's name
 #
-def Replace_Method(module, method, mock_method):
+#   #my_attr        - passed attribute reference
+#   #object_attr    - object reference (module or class), defult value is a
+#   #                 current module
+#
+def Return_Name_From_Attribute(my_attr, object_attr=sys.modules[__name__]):
 
-    # get the attribute that represent method in a module
-    at = getattr(module, method)
-    original_fields =  inspect.getargspec(at)
-    mock_fields =  inspect.getargspec(mock_method)
+    res = None
+    # iterate over object's attributes
+    for k,v in object_attr.__dict__.iteritems():
+        if my_attr is v:
+            res = k
+            break
+    return res
+
+#Replace_Method - operator used for a method replacement
+#
+def Replace_Method(module, original_method_name, attr_mock_method):
+
+    mock_method_name = Return_Name_From_Attribute(attr_mock_method)
+    attr_orig_method = getattr(module, original_method_name)
+    original_fields =  inspect.getargspec(attr_orig_method)
+    mock_fields =  inspect.getargspec(attr_mock_method)
+
+    difference = len(original_fields.args) - len(mock_fields.args)
+
+    if difference != 0:
+        print "Cannot replace method because of parameters incompatibility."
+        print "ORIGINAL METHOD: ", original_fields.args
+        print "MOCK METHOD    : ", mock_fields.args
+        sys.exit(0)
+
+    obj_met = Mocked_Item(original_method_name)
+    obj_met.Collect_Info(module, original_method_name, attr_orig_method, mock_method_name, attr_mock_method)
+    list_mocked_method.append(obj_met)
+
+    delattr(module, original_method_name)
+    setattr(module, original_method_name, attr_mock_method)
+
+#Replace_Variable - operator used for a variable replacement
+#
+def Replace_Variable(module, original_variable_name, attr_mock_variable):
+
+    mock_variable_name = Return_Name_From_Attribute(attr_mock_variable)
+    attr_orig_variable = getattr(module, original_variable_name)
 
 
-    diff_dict_methods = frozenset(original_fields).intersection(mock_fields)
+    obj_met = Mocked_Item(original_variable_name)
+    obj_met.Collect_Info(module, original_variable_name, attr_orig_variable, mock_variable_name, attr_mock_variable)
+    list_mocked_method.append(obj_met)
 
-    delattr(module, method)
-    setattr(module, method, mock_method)
+    delattr(module, original_variable_name)
+    setattr(module, original_variable_name, attr_mock_variable)
+
 
 
 if __name__ == "__main__":
 
     pass
+
