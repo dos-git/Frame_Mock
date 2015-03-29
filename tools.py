@@ -4,6 +4,46 @@ import sys, os
 import inspect
 
 
+#list_mocked_method - collection of mocked items
+#
+list_mocked_method = []
+
+#Mocked_Item - class defines object to keep details about mocked item
+#
+class Mocked_Item(object):
+
+    def __init__(self, item_name):
+        self.item_name = item_name
+
+#Collect_Info - retrieves details about mocking procedure,
+#
+    #   #module             - keeps an object reference
+    #   #name_orig_methode  - holds an original method name
+    #   #attr_orig_methode  - holds a reference to an original method
+    #   #name_mock_methode  - holds a mocked method name
+    #   #attr_orig_methode  - holds a reference to a mocked method
+
+#Collect_Info - process details info about mocked item
+#
+    def Collect_Info(self, *items_list):
+
+        if len(items_list) == 5:
+            self.module = items_list[0]
+            self.name_orig_method = items_list[1]
+            self.attr_orig_method = items_list[2]
+            self.name_mock_method = items_list[3]
+            self.attr_mock_method = items_list[4]
+        else:
+            print "Wrong usage of mocking function for item %s." % self.item_name
+            sys.exit(0)
+
+#Restore - restores an original values before a mock procedure
+#
+    def Restore(self):
+        delattr(self.module, self.name_orig_method)
+        setattr(self.module, self.name_orig_method, self.attr_orig_method)
+
+
 def Verification(obj=object):
 
     # list of built in methods
