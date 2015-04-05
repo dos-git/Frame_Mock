@@ -29,10 +29,10 @@ class Mocked_Item(object):
 
         if len(items_list) == 5:
             self.module = items_list[0]
-            self.name_orig_method = items_list[1]
-            self.attr_orig_method = items_list[2]
-            self.name_mock_method = items_list[3]
-            self.attr_mock_method = items_list[4]
+            self.name_orig_item = items_list[1]
+            self.attr_orig_item = items_list[2]
+            self.name_mock_item = items_list[3]
+            self.attr_mock_item = items_list[4]
         else:
             print "Wrong usage of mocking function for item %s." % self.item_name
             sys.exit(0)
@@ -40,8 +40,9 @@ class Mocked_Item(object):
 #Restore - restores an original values before a mock procedure
 #
     def Restore(self):
-        delattr(self.module, self.name_orig_method)
-        setattr(self.module, self.name_orig_method, self.attr_orig_method)
+
+        delattr(self.module, self.name_orig_item)
+        setattr(self.module, self.name_orig_item, self.attr_orig_item)
 
 #Verification - process a class's object in order to get the list of methods
 #               and fields.
@@ -78,24 +79,32 @@ def Is_Method(obj, name):
 # #Replace_Class - operator used for a class substitution, before replacement there is performed a check
 #                  of structure for original and mocked class
 #
-def Replace_Class(original_class, mock_class):
+def Replace_Class(module, orig_class_name, attr_mock_class):
 
     diff_text = ""
+    mock_class_name = attr_mock_class.__name__
+    attr_orig_class = getattr(module, orig_class_name)
 
     # get implementation details
-    orig_dict = Verification(original_class)
-    mock_dict = Verification(mock_class)
+    orig_dict = Verification(attr_orig_class)
+    mock_dict = Verification(attr_mock_class)
 
     # examine differences
     diff_dict_methods = [x for x in orig_dict["methods"] if x not in mock_dict["methods"]]
     diff_dict_fields = [x for x in orig_dict["fields"] if x not in mock_dict["fields"]]
 
     text_result = ""
-    # do the class substitution
-    if len(diff_dict_methods) == 0 and len(diff_dict_fields) == 0:
-        print "replace"
-        original_class = mock_class
 
+    if len(diff_dict_methods) == 0 and len(diff_dict_fields) == 0:
+
+        obj_met = Mocked_Item(attr_orig_class.__name__)
+        obj_met.Collect_Info(module, attr_orig_class.__name__, attr_orig_class,
+                             attr_mock_class.__name__, attr_mock_class)
+        list_mocked_method.append(obj_met)
+
+        # do the class substitution
+        delattr(module, attr_orig_class.__name__)
+        setattr(module, attr_orig_class.__name__, attr_mock_class)
         return
 
     # check reasons of error
@@ -107,7 +116,7 @@ def Replace_Class(original_class, mock_class):
             diff_text += diff_next
         text_result += diff_text + "\n"
 
-    if len(diff_dict_fields) != 0:
+    elif len(diff_dict_fields) != 0:
         diff_next = ""
         diff_text = "The original and mock class have different fields:\n"
         for k in diff_dict_fields:
@@ -158,13 +167,12 @@ def Replace_Method(module, original_method_name, attr_mock_method):
     delattr(module, original_method_name)
     setattr(module, original_method_name, attr_mock_method)
 
-#Replace_Variable - operator used for a variable replacement
+#Replace_Item - operator used for a variable or function replacement
 #
-def Replace_Variable(module, original_variable_name, attr_mock_variable):
+def Replace_Item(module, original_variable_name, attr_mock_variable):
 
     mock_variable_name = Return_Name_From_Attribute(attr_mock_variable)
     attr_orig_variable = getattr(module, original_variable_name)
-
 
     obj_met = Mocked_Item(original_variable_name)
     obj_met.Collect_Info(module, original_variable_name, attr_orig_variable, mock_variable_name, attr_mock_variable)
@@ -173,9 +181,12 @@ def Replace_Variable(module, original_variable_name, attr_mock_variable):
     delattr(module, original_variable_name)
     setattr(module, original_variable_name, attr_mock_variable)
 
-
+#Replace_Class(module_source, "CLASS_NAME", Mock_Class)
+#Replace_Method(module_source.CLASS_NAME, "Method_Name", Mock_Function)
+#Replace_Item(module_source, "function", tool_func)
 
 if __name__ == "__main__":
 
-    pass
 
+
+    pass
