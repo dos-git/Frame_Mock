@@ -3,9 +3,6 @@ __author__ = 'dos'
 import sys, os
 import inspect
 
-sys.path.append("../Events")
-
-import test2
 
 #list_mocked_method - collection of mocked items
 list_mocked_method = []
@@ -17,7 +14,7 @@ class Mocked_Item(object):
     def __init__(self, item_name):
         self.item_name = item_name
 
-#Collect_Info - retrieves details about mocking procedure,
+#collect_info - retrieves details about mocking procedure,
 #
 #   #module             - keeps an object reference
 #   #name_orig_methode  - holds an original method name
@@ -25,7 +22,7 @@ class Mocked_Item(object):
 #   #name_mock_methode  - holds a mocked method name
 #   #attr_orig_methode  - holds a reference to a mocked method
 #
-    def Collect_Info(self, *items_list):
+    def collect_info(self, *items_list):
 
         if len(items_list) == 5:
             self.module = items_list[0]
@@ -37,17 +34,17 @@ class Mocked_Item(object):
             print "Wrong usage of mocking function for item %s." % self.item_name
             sys.exit(0)
 
-#Restore - restores an original values before a mock procedure
+#restore - restores an original values before a mock procedure
 #
-    def Restore(self):
+    def restore(self):
 
         delattr(self.module, self.name_orig_item)
         setattr(self.module, self.name_orig_item, self.attr_orig_item)
 
-#Verification - process a class's object in order to get the list of methods
+#verification - process a class's object in order to get the list of methods
 #               and fields.
 #
-def Verification(obj=object):
+def verification(class_object):
 
     # list of built in methods
     list_inbuilt_method = [ '__class__', '__delattr__', '__dict__', '__doc__', '__format__', '__getattribute__',
@@ -60,34 +57,35 @@ def Verification(obj=object):
     structure["fields"] = []
 
     # iterate over list of valid attributes of object
-    for i in dir(obj):
-        if i not in list_inbuilt_method:
-            if Is_Method(obj, i):
-                structure["methods"].append(i)
+    for item_attr in dir(class_object):
+        # exclude built in methods
+        if item_attr not in list_inbuilt_method:
+            if is_method(class_object, item_attr):
+                structure["methods"].append(item_attr)
             else:
-                structure["fields"].append(i)
+                structure["fields"].append(item_attr)
         else:
             pass
 
     return structure
 
-# #Is_Method - check if object has a given method
+# #is_method - check if object has a given method
 #
-def Is_Method(obj, name):
+def is_method(obj, name):
     return hasattr(obj, name) and inspect.ismethod(getattr(obj, name))
 
-# #Replace_Class - operator used for a class substitution, before replacement there is performed a check
+# #replace_class - operator used for a class substitution, before replacement there is performed a check
 #                  of structure for original and mocked class
 #
-def Replace_Class(module, orig_class_name, attr_mock_class):
+def replace_class(module, orig_class_name, attr_mock_class):
 
     diff_text = ""
     mock_class_name = attr_mock_class.__name__
     attr_orig_class = getattr(module, orig_class_name)
 
     # get implementation details
-    orig_dict = Verification(attr_orig_class)
-    mock_dict = Verification(attr_mock_class)
+    orig_dict = verification(attr_orig_class)
+    mock_dict = verification(attr_mock_class)
 
     # examine differences
     diff_dict_methods = [x for x in orig_dict["methods"] if x not in mock_dict["methods"]]
@@ -98,7 +96,7 @@ def Replace_Class(module, orig_class_name, attr_mock_class):
     if len(diff_dict_methods) == 0 and len(diff_dict_fields) == 0:
 
         obj_met = Mocked_Item(attr_orig_class.__name__)
-        obj_met.Collect_Info(module, attr_orig_class.__name__, attr_orig_class,
+        obj_met.collect_info(module, attr_orig_class.__name__, attr_orig_class,
                              attr_mock_class.__name__, attr_mock_class)
         list_mocked_method.append(obj_met)
 
@@ -126,14 +124,14 @@ def Replace_Class(module, orig_class_name, attr_mock_class):
 
     print text_result
 
-#Return_Name_From_Attribute - checks if passed attribute reference belong
+#return_name_from_attribute - checks if passed attribute reference belong
 #                             to object refrence and retrives refrence's name
 #
 #   #my_attr        - passed attribute reference
 #   #object_attr    - object reference (module or class), defult value is a
 #   #                 current module
 #
-def Return_Name_From_Attribute(my_attr, object_attr=sys.modules[__name__]):
+def return_name_from_attribute(my_attr, object_attr=sys.modules[__name__]):
 
     res = None
     # iterate over object's attributes
@@ -143,11 +141,11 @@ def Return_Name_From_Attribute(my_attr, object_attr=sys.modules[__name__]):
             break
     return res
 
-#Replace_Method - operator used for a method replacement
+#replace_method - operator used for a method replacement
 #
-def Replace_Method(module, original_method_name, attr_mock_method):
+def replace_method(module, original_method_name, attr_mock_method):
 
-    mock_method_name = Return_Name_From_Attribute(attr_mock_method)
+    mock_method_name = return_name_from_attribute(attr_mock_method)
     attr_orig_method = getattr(module, original_method_name)
     original_fields =  inspect.getargspec(attr_orig_method)
     mock_fields =  inspect.getargspec(attr_mock_method)
@@ -161,32 +159,31 @@ def Replace_Method(module, original_method_name, attr_mock_method):
         sys.exit(0)
 
     obj_met = Mocked_Item(original_method_name)
-    obj_met.Collect_Info(module, original_method_name, attr_orig_method, mock_method_name, attr_mock_method)
+    obj_met.collect_info(module, original_method_name, attr_orig_method, mock_method_name, attr_mock_method)
     list_mocked_method.append(obj_met)
 
     delattr(module, original_method_name)
     setattr(module, original_method_name, attr_mock_method)
 
-#Replace_Item - operator used for a variable or function replacement
+#replace_item - operator used for a variable or function replacement
 #
-def Replace_Item(module, original_variable_name, attr_mock_variable):
+def replace_item(module, original_variable_name, attr_mock_variable):
 
-    mock_variable_name = Return_Name_From_Attribute(attr_mock_variable)
+    mock_variable_name = return_name_from_attribute(attr_mock_variable)
     attr_orig_variable = getattr(module, original_variable_name)
 
     obj_met = Mocked_Item(original_variable_name)
-    obj_met.Collect_Info(module, original_variable_name, attr_orig_variable, mock_variable_name, attr_mock_variable)
+    obj_met.collect_info(module, original_variable_name, attr_orig_variable, mock_variable_name, attr_mock_variable)
     list_mocked_method.append(obj_met)
 
     delattr(module, original_variable_name)
     setattr(module, original_variable_name, attr_mock_variable)
 
-#Replace_Class(module_source, "CLASS_NAME", Mock_Class)
-#Replace_Method(module_source.CLASS_NAME, "Method_Name", Mock_Function)
-#Replace_Item(module_source, "function", tool_func)
+
+
+#replace_class(module_source, "CLASS_NAME", Mock_Class)
+#replace_method(module_source.CLASS_NAME, "Method_Name", Mock_Function)
+#replace_item(module_source, "function", tool_func)
 
 if __name__ == "__main__":
-
-
-
     pass
