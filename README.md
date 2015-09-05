@@ -1,4 +1,9 @@
-# Mock_tool
-The Python tool for unittests
+Frame Mock is a software that manages creation of mock objects in Python code.
 
-The goal for this project is create a python module used for unittests. The module will use the functionality of python  {get,set}attr. It will be enhanced with error handling. In case of issues, it will informs what kind of error has been done.
+The project is a continuation of the previous version realized on my old git account.
+
+The software is addressed for Python projects in order to help creation and management of mock objects in unit-tests.
+The tool allows to replace as a mock:
+- classes
+- class methods and fields
+- functions and global variables
