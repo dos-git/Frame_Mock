@@ -2,7 +2,7 @@ __author__ = 'dos'
 
 import sys, os
 import inspect
-
+from pprint import pprint
 
 #list_mocked_method - collection of mocked items
 list_mocked_method = []
@@ -55,7 +55,6 @@ def verification(class_object):
     structure = {}
     structure["methods"] = []
     structure["fields"] = []
-
     # iterate over list of valid attributes of object
     for item_attr in dir(class_object):
         # exclude built in methods
@@ -63,6 +62,7 @@ def verification(class_object):
             if is_method(class_object, item_attr):
                 structure["methods"].append(item_attr)
             else:
+                #TODO -any class fields are not recorded... check why....
                 structure["fields"].append(item_attr)
         else:
             pass
@@ -81,6 +81,7 @@ def replace_class(module, orig_class_name, attr_mock_class):
 
     diff_text = ""
     mock_class_name = attr_mock_class.__name__
+    # get attr original class (ordinary string) and module (object)
     attr_orig_class = getattr(module, orig_class_name)
 
     # get implementation details
@@ -125,7 +126,7 @@ def replace_class(module, orig_class_name, attr_mock_class):
     print text_result
 
 #return_name_from_attribute - checks if passed attribute reference belong
-#                             to object refrence and retrives refrence's name
+#                             to object reference and retrieves reference's name
 #
 #   #my_attr        - passed attribute reference
 #   #object_attr    - object reference (module or class), defult value is a
@@ -133,12 +134,15 @@ def replace_class(module, orig_class_name, attr_mock_class):
 #
 def return_name_from_attribute(my_attr, object_attr=sys.modules[__name__]):
 
+    # TODO - function probably not needed beacuse we don't care about mocked item any more after test...
     res = None
     # iterate over object's attributes
+    #print "DICT [%s]" % str(object_attr.__dict__.iteritems())
     for k,v in object_attr.__dict__.iteritems():
         if my_attr is v:
             res = k
             break
+    #print res
     return res
 
 #replace_method - operator used for a method replacement
@@ -182,8 +186,13 @@ def replace_item(module, original_variable_name, attr_mock_variable):
 
 
 #replace_class(module_source, "CLASS_NAME", Mock_Class)
-#replace_method(module_source.CLASS_NAME, "Method_Name", Mock_Function)
-#replace_item(module_source, "function", tool_func)
+#replace_method(module_source.CLASS_NAME, "Method_Name", mock_function)
+#replace_item(module_source, "function|variable", mock_func|mock_var)
+
+#############IMPORtANT
+#               attributes = [attr for attr in dir(a) if not attr.startswith('__')]
+
+
 
 if __name__ == "__main__":
     pass
