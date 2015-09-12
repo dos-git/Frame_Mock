@@ -17,19 +17,17 @@ class Mocked_Item(object):
 #collect_info - retrieves details about mocking procedure,
 #
 #   #module             - keeps an object reference
-#   #name_orig_methode  - holds an original method name
-#   #attr_orig_methode  - holds a reference to an original method
-#   #name_mock_methode  - holds a mocked method name
-#   #attr_orig_methode  - holds a reference to a mocked method
+#   #name_orig_item  - holds an original method name
+#   #attr_orig_item  - holds a reference to an original method
+#   #attr_mock_item  - holds a reference to a mocked method
 #
     def collect_info(self, *items_list):
 
-        if len(items_list) == 5:
+        if len(items_list) == 4:
             self.module = items_list[0]
             self.name_orig_item = items_list[1]
             self.attr_orig_item = items_list[2]
-            self.name_mock_item = items_list[3]
-            self.attr_mock_item = items_list[4]
+            self.attr_mock_item = items_list[3]
         else:
             print "Wrong usage of mocking function for item %s." % self.item_name
             sys.exit(0)
@@ -54,18 +52,14 @@ def verification(class_object):
     # structure is the dictionary for holding object definition
     structure = {}
     structure["methods"] = []
-    structure["fields"] = []
     # iterate over list of valid attributes of object
     for item_attr in dir(class_object):
         # exclude built in methods
         if item_attr not in list_inbuilt_method:
             if is_method(class_object, item_attr):
                 structure["methods"].append(item_attr)
-            else:
-                #TODO -any class fields are not recorded... check why....
-                structure["fields"].append(item_attr)
         else:
-            pass
+            continue
 
     return structure
 
@@ -90,66 +84,35 @@ def replace_class(module, orig_class_name, attr_mock_class):
 
     # examine differences
     diff_dict_methods = [x for x in orig_dict["methods"] if x not in mock_dict["methods"]]
-    diff_dict_fields = [x for x in orig_dict["fields"] if x not in mock_dict["fields"]]
 
-    text_result = ""
 
-    if len(diff_dict_methods) == 0 and len(diff_dict_fields) == 0:
+
+    if len(diff_dict_methods) == 0:
 
         obj_met = Mocked_Item(attr_orig_class.__name__)
-        obj_met.collect_info(module, attr_orig_class.__name__, attr_orig_class,
-                             attr_mock_class.__name__, attr_mock_class)
+        obj_met.collect_info(module, attr_orig_class.__name__, attr_orig_class, attr_mock_class)
         list_mocked_method.append(obj_met)
 
         # do the class substitution
         delattr(module, attr_orig_class.__name__)
         setattr(module, attr_orig_class.__name__, attr_mock_class)
-        return
 
     # check reasons of error
-    if len(diff_dict_methods) != 0:
+    else:
+        text_result = ""
         diff_next = ""
         diff_text = "The original and mock class have different methods:\n"
         for k in diff_dict_methods:
             diff_next = "%s " % str(k)
             diff_text += diff_next
         text_result += diff_text + "\n"
+        print text_result
 
-    elif len(diff_dict_fields) != 0:
-        diff_next = ""
-        diff_text = "The original and mock class have different fields:\n"
-        for k in diff_dict_fields:
-            diff_next = "%s " % str(k)
-            diff_text += diff_next
-        text_result += diff_text + "\n"
-
-    print text_result
-
-#return_name_from_attribute - checks if passed attribute reference belong
-#                             to object reference and retrieves reference's name
-#
-#   #my_attr        - passed attribute reference
-#   #object_attr    - object reference (module or class), defult value is a
-#   #                 current module
-#
-def return_name_from_attribute(my_attr, object_attr=sys.modules[__name__]):
-
-    # TODO - function probably not needed beacuse we don't care about mocked item any more after test...
-    res = None
-    # iterate over object's attributes
-    #print "DICT [%s]" % str(object_attr.__dict__.iteritems())
-    for k,v in object_attr.__dict__.iteritems():
-        if my_attr is v:
-            res = k
-            break
-    #print res
-    return res
 
 #replace_method - operator used for a method replacement
 #
 def replace_method(module, original_method_name, attr_mock_method):
 
-    mock_method_name = return_name_from_attribute(attr_mock_method)
     attr_orig_method = getattr(module, original_method_name)
     original_fields =  inspect.getargspec(attr_orig_method)
     mock_fields =  inspect.getargspec(attr_mock_method)
@@ -163,7 +126,7 @@ def replace_method(module, original_method_name, attr_mock_method):
         sys.exit(0)
 
     obj_met = Mocked_Item(original_method_name)
-    obj_met.collect_info(module, original_method_name, attr_orig_method, mock_method_name, attr_mock_method)
+    obj_met.collect_info(module, original_method_name, attr_orig_method, attr_mock_method)
     list_mocked_method.append(obj_met)
 
     delattr(module, original_method_name)
@@ -173,11 +136,10 @@ def replace_method(module, original_method_name, attr_mock_method):
 #
 def replace_item(module, original_variable_name, attr_mock_variable):
 
-    mock_variable_name = return_name_from_attribute(attr_mock_variable)
     attr_orig_variable = getattr(module, original_variable_name)
 
     obj_met = Mocked_Item(original_variable_name)
-    obj_met.collect_info(module, original_variable_name, attr_orig_variable, mock_variable_name, attr_mock_variable)
+    obj_met.collect_info(module, original_variable_name, attr_orig_variable, attr_mock_variable)
     list_mocked_method.append(obj_met)
 
     delattr(module, original_variable_name)
